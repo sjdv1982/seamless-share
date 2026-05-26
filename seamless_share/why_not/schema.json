@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seamless.dev/seamless-share/why-not/schema.json",
+  "title": "seamless-share why-not schema",
+  "version": "0.1.0",
+  "oneOf": [
+    {"$ref": "#/$defs/WhyNotResult"},
+    {"$ref": "#/$defs/TransformationDiffResult"}
+  ],
+  "$defs": {
+    "ReferenceInput": {
+      "type": "object",
+      "required": ["tf_checksum", "reference_form"],
+      "properties": {
+        "tf_checksum": {"type": ["string", "null"]},
+        "reference_form": {"type": "string"},
+        "source_endpoint": {"type": ["string", "null"]},
+        "endpoint_set": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "DeepDiff": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["text_diff", "json_diff", "checksum_fallback"]},
+        "body": {},
+        "fallback_reason": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "DiffEntry": {
+      "type": "object",
+      "required": ["side", "key", "classification"],
+      "properties": {
+        "side": {
+          "enum": [
+            "key_only_in_A",
+            "key_only_in_B",
+            "key_only_in_input",
+            "key_only_in_candidate",
+            "value_differs"
+          ]
+        },
+        "key": {"type": "string"},
+        "classification": {"enum": ["plain", "dunder"]},
+        "value_A": {},
+        "value_B": {},
+        "value_input": {},
+        "value_candidate": {},
+        "deep": {"oneOf": [{"$ref": "#/$defs/DeepDiff"}, {"type": "null"}]}
+      },
+      "additionalProperties": false
+    },
+    "LookupState": {
+      "type": "object",
+      "required": ["state", "per_endpoint", "details"],
+      "properties": {
+        "state": {
+          "enum": [
+            "NOT_PRESENT",
+            "IRREPRODUCIBLE",
+            "PRESENT_RESULT_UNAVAILABLE",
+            "PRESENT_AS_HIT"
+          ]
+        },
+        "per_endpoint": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["endpoint", "state", "details"],
+            "properties": {
+              "endpoint": {"type": "string"},
+              "state": {"type": "string"},
+              "details": {"type": "object"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "details": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "TransformationDiffResult": {
+      "type": "object",
+      "required": ["tool", "version", "input_A", "input_B", "identity_relevant", "entries", "warnings"],
+      "properties": {
+        "tool": {"const": "transformation-diff"},
+        "version": {"type": "string"},
+        "input_A": {"$ref": "#/$defs/ReferenceInput"},
+        "input_B": {"$ref": "#/$defs/ReferenceInput"},
+        "identity_relevant": {"type": "boolean"},
+        "entries": {"type": "array", "items": {"$ref": "#/$defs/DiffEntry"}},
+        "warnings": {"type": "array", "items": {"type": "string"}},
+        "timing": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "WhyNotResult": {
+      "type": "object",
+      "required": ["tool", "version", "input", "lookup_state", "warnings"],
+      "properties": {
+        "tool": {"const": "why-not"},
+        "version": {"type": "string"},
+        "input": {"$ref": "#/$defs/ReferenceInput"},
+        "lookup_state": {"$ref": "#/$defs/LookupState"},
+        "candidate": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["tf_checksum"],
+              "properties": {
+                "tf_checksum": {"type": "string"},
+                "selection_score": {"type": ["number", "null"]},
+                "explanation": {"type": ["object", "null"]},
+                "runners_up": {"type": "array"}
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "diff": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["identity_relevant", "entries"],
+              "properties": {
+                "identity_relevant": {"type": "boolean"},
+                "entries": {"type": "array", "items": {"$ref": "#/$defs/DiffEntry"}}
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "warnings": {"type": "array", "items": {"type": "string"}},
+        "timing": {"type": "object"}
+      },
+      "additionalProperties": false
+    }
+  }
+}
