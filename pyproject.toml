@@ -21,4 +21,12 @@ seamless-share = "seamless_share.cli:main"
 include = ["seamless_share*"]
 
 [tool.setuptools.package-data]
-seamless_share = ["why_not/schema.json", "why_not/README.md", "why_not/CHANGELOG.md"]
+seamless_share = [
+  "why_not/schema.json",
+  "why_not/README.md",
+  "why_not/CHANGELOG.md",
+  "replay/schema.json",
+  "replay/README.md",
+  "replay/CHANGELOG.md",
+  "replay/findings.md",
+]

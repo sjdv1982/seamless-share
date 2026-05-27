@@ -1,0 +1,133 @@
+{
+  "version": "0.1.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["tool", "version", "artifact", "authorization_summary", "config", "outcome", "counts", "findings", "post_run_assertions"],
+  "properties": {
+    "tool": {"const": "replay"},
+    "version": {"const": "0.1.0"},
+    "artifact": {
+      "type": "object",
+      "required": ["seamless_db", "seamless_db_checksum", "bufferdir", "bufferdir_checksum"],
+      "properties": {
+        "seamless_db": {"type": "string"},
+        "seamless_db_checksum": {"type": "string"},
+        "bufferdir": {"type": "string"},
+        "bufferdir_checksum": {"type": "string"}
+      }
+    },
+    "authorization_summary": {"type": "object"},
+    "config": {
+      "type": "object",
+      "required": ["synthesized", "endpoints_resolved", "driver_cache"],
+      "properties": {
+        "synthesized": {"type": "boolean"},
+        "endpoints_resolved": {"type": "object"},
+        "driver_cache": {"enum": ["bypass", "enabled"]},
+        "config_path": {"type": "string"},
+        "inherited": {"type": "boolean"},
+        "warnings": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["phase", "wall_ms"],
+      "properties": {
+        "phase": {"enum": ["completed", "script_error", "timeout", "setup_error"]},
+        "wall_ms": {"type": "integer"},
+        "script_exit_code": {"type": "integer"},
+        "message": {"type": "string"}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": [
+        "drivers_executed",
+        "drivers_short_circuited",
+        "transformations_submitted",
+        "cache_hits",
+        "buffers_materialized_from_bufferdir",
+        "buffers_materialized_via_authorized_fingertip",
+        "findings_by_kind"
+      ],
+      "properties": {
+        "drivers_executed": {"type": "integer"},
+        "drivers_short_circuited": {"type": "integer"},
+        "transformations_submitted": {"type": "integer"},
+        "cache_hits": {"type": "integer"},
+        "buffers_materialized_from_bufferdir": {"type": "integer"},
+        "buffers_materialized_via_authorized_fingertip": {"type": "integer"},
+        "findings_by_kind": {"type": "object", "additionalProperties": {"type": "integer"}}
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "id", "fields"],
+        "properties": {
+          "kind": {
+            "enum": [
+              "unexpected_miss",
+              "unauthorized_materialization",
+              "unauthorized_fingertip",
+              "authorized_materialization_unsatisfied_dependency",
+              "remote_delegation_observed",
+              "unexpected_heavy_compute",
+              "irreproducible_only_hit",
+              "authorization_incoherent"
+            ]
+          },
+          "id": {"type": "string"},
+          "script_position": {"type": ["string", "null"]},
+          "tf_checksum": {"type": ["string", "null"]},
+          "fields": {"type": "object"},
+          "context": {"type": "object"}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"kind": {"const": "unexpected_miss"}}},
+            "then": {"properties": {"fields": {"required": ["tf_checksum", "script_position", "driver_context", "diff"]}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "unauthorized_materialization"}}},
+            "then": {"properties": {"fields": {"required": ["checksum", "requested_by", "script_position", "available_authorizations"]}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "unauthorized_fingertip"}}},
+            "then": {"properties": {"fields": {"required": ["consumer_tf_checksum", "missing_input_checksum", "producer_tf_checksum", "script_position"]}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "authorized_materialization_unsatisfied_dependency"}}},
+            "then": {"properties": {"fields": {"required": ["authorized_target", "unsatisfied_dependency", "chain", "script_position"]}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "remote_delegation_observed"}}},
+            "then": {"properties": {"fields": {"required": ["backend", "dispatched_work", "script_position"]}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "unexpected_heavy_compute"}}},
+            "then": {"properties": {"fields": {"required": ["tf_checksum", "was_driver", "observed_cost_ms", "correlated_miss"]}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "irreproducible_only_hit"}}},
+            "then": {"properties": {"fields": {"required": ["tf_checksum", "row_count", "result_checksums", "script_position"]}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "authorization_incoherent"}}},
+            "then": {"properties": {"fields": {"required": ["authorization", "reason"]}}}
+          }
+        ]
+      }
+    },
+    "post_run_assertions": {
+      "type": "object",
+      "required": ["seamless_db_unchanged", "bufferdir_unchanged"],
+      "properties": {
+        "seamless_db_unchanged": {"type": "boolean"},
+        "bufferdir_unchanged": {"type": "boolean"}
+      }
+    },
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  }
+}
