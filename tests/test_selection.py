@@ -11,6 +11,16 @@ def test_plain_delta_count_counts_one_sided_and_value_changes():
     assert plain_delta_count({"a": 1, "b": 2}, {"a": 1, "b": 3, "c": 4}) == 2
 
 
+def test_plain_delta_count_includes_load_bearing_dunders():
+    assert (
+        plain_delta_count(
+            {"code": "a", "__language__": "python"},
+            {"code": "a", "__language__": "bash"},
+        )
+        == 1
+    )
+
+
 def test_refuses_candidate_with_one_shared_value_but_too_many_deltas():
     input_dict = {"shared": 1, "a": 1, "b": 2, "c": 3, "d": 4}
     candidate = SimpleNamespace(

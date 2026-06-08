@@ -41,7 +41,9 @@ class DiffSide(str, Enum):
 
 class Classification(str, Enum):
     PLAIN = "plain"
-    DUNDER = "dunder"
+    LOAD_BEARING_DUNDER = "load_bearing_dunder"
+    ORTHOGONAL_DUNDER = "orthogonal_dunder"
+    DERIVED_DUNDER = "derived_dunder"
 
 
 class DeepKind(str, Enum):

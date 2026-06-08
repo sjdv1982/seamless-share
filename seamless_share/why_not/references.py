@@ -22,7 +22,11 @@ except Exception:  # pragma: no cover - fallback for isolated tests
 
 def plain_transformation_dict(tf_dict: dict[str, Any]) -> dict[str, Any]:
     excluded = non_checksum_keys()
-    return {str(key): value for key, value in tf_dict.items() if str(key) not in excluded}
+    return {
+        str(key): value
+        for key, value in tf_dict.items()
+        if str(key) not in excluded and not str(key).startswith("META__")
+    }
 
 
 def transformation_checksum(tf_dict: dict[str, Any]) -> str:

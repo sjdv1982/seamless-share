@@ -8,34 +8,76 @@ from typing import Any
 from .models import Classification, DeepDiff, DiffEntry, DiffSide, TransformationDiffResult, SCHEMA_VERSION
 
 try:
-    from seamless_transformer.pretransformation import NON_CHECKSUM_ITEMS as _NON_CHECKSUM_ITEMS
+    from seamless_transformer.transformation_utils import (
+        TRANSFORMATION_DERIVED_DUNDER_KEYS,
+        TRANSFORMATION_LOAD_BEARING_DUNDER_KEYS,
+        TRANSFORMATION_ORTHOGONAL_DUNDER_KEYS,
+    )
 except Exception:  # pragma: no cover - optional workspace dependency
-    _NON_CHECKSUM_ITEMS = (
-        "__output__",
+    TRANSFORMATION_LOAD_BEARING_DUNDER_KEYS = {
         "__language__",
+        "__output__",
+        "__as__",
+        "__format__",
+        "__schema__",
+    }
+    TRANSFORMATION_ORTHOGONAL_DUNDER_KEYS = {
         "__meta__",
         "__env__",
-        "__format__",
-        "__code_text__",
-        "__code_checksum__",
-        "__compiled__",
         "__compilation__",
         "__record_probe__",
-        "__schema__",
+        "__code_checksum__",
+        "__code_text__",
+        "__compilers__",
+        "__languages__",
+    }
+    TRANSFORMATION_DERIVED_DUNDER_KEYS = {
+        "__compiled__",
         "__header__",
-    )
+        "__deps__",
+    }
 
 
 def non_checksum_keys() -> set[str]:
-    return set(_NON_CHECKSUM_ITEMS)
+    return set(TRANSFORMATION_ORTHOGONAL_DUNDER_KEYS) | set(
+        TRANSFORMATION_DERIVED_DUNDER_KEYS
+    )
 
 
 def is_dunder_key(key: str) -> bool:
-    return (key.startswith("__") and key.endswith("__")) or key in non_checksum_keys()
+    return (
+        key in TRANSFORMATION_LOAD_BEARING_DUNDER_KEYS
+        or key in TRANSFORMATION_ORTHOGONAL_DUNDER_KEYS
+        or key in TRANSFORMATION_DERIVED_DUNDER_KEYS
+        or (key.startswith("__") and key.endswith("__"))
+        or key.startswith("META__")
+    )
 
 
 def classify_key(key: str) -> str:
-    return Classification.DUNDER.value if is_dunder_key(key) else Classification.PLAIN.value
+    if key in TRANSFORMATION_LOAD_BEARING_DUNDER_KEYS:
+        return Classification.LOAD_BEARING_DUNDER.value
+    if key in TRANSFORMATION_DERIVED_DUNDER_KEYS:
+        return Classification.DERIVED_DUNDER.value
+    if key in TRANSFORMATION_ORTHOGONAL_DUNDER_KEYS or key.startswith("META__"):
+        return Classification.ORTHOGONAL_DUNDER.value
+    if key.startswith("__") and key.endswith("__"):
+        return Classification.ORTHOGONAL_DUNDER.value
+    return Classification.PLAIN.value
+
+
+def is_identity_classification(classification: str) -> bool:
+    return classification in {
+        Classification.PLAIN.value,
+        Classification.LOAD_BEARING_DUNDER.value,
+    }
+
+
+def is_non_identity_dunder_classification(classification: str) -> bool:
+    return classification in {
+        Classification.ORTHOGONAL_DUNDER.value,
+        Classification.DERIVED_DUNDER.value,
+    }
 
 
 def normalize_value(value: Any) -> Any:
@@ -98,9 +140,14 @@ def transformation_diff_core(
             deep=deep_entries.get(key),
         )
         entries.append(entry)
-    identity_relevant = any(entry.classification == Classification.PLAIN.value for entry in entries)
+    identity_relevant = any(
+        is_identity_classification(entry.classification) for entry in entries
+    )
     warnings: list[str] = []
-    if entries and not identity_relevant:
+    if entries and all(
+        is_non_identity_dunder_classification(entry.classification)
+        for entry in entries
+    ):
         warnings.append("dunder_only_diff")
     return entries, identity_relevant, warnings
 

@@ -5,8 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .diff import classify_key, normalize_value
-from .models import Classification
+from .diff import (
+    classify_key,
+    is_identity_classification,
+    is_non_identity_dunder_classification,
+    normalize_value,
+)
 
 DEFAULT_MAX_PLAIN_DELTA = 3
 
@@ -38,9 +42,25 @@ def split_keys(tf_dict: dict[str, Any], classification: str) -> dict[str, Any]:
     }
 
 
+def split_identity_keys(tf_dict: dict[str, Any]) -> dict[str, Any]:
+    return {
+        str(key): normalize_value(value)
+        for key, value in tf_dict.items()
+        if is_identity_classification(classify_key(str(key)))
+    }
+
+
+def split_non_identity_dunder_keys(tf_dict: dict[str, Any]) -> dict[str, Any]:
+    return {
+        str(key): normalize_value(value)
+        for key, value in tf_dict.items()
+        if is_non_identity_dunder_classification(classify_key(str(key)))
+    }
+
+
 def plain_delta_count(input_dict: dict[str, Any], candidate_dict: dict[str, Any]) -> int:
-    plain_input = split_keys(input_dict, Classification.PLAIN.value)
-    plain_candidate = split_keys(candidate_dict, Classification.PLAIN.value)
+    plain_input = split_identity_keys(input_dict)
+    plain_candidate = split_identity_keys(candidate_dict)
     count = 0
     for key in set(plain_input) | set(plain_candidate):
         if key not in plain_input or key not in plain_candidate:
@@ -57,10 +77,10 @@ def score_candidate(
     *,
     max_plain_delta: int = DEFAULT_MAX_PLAIN_DELTA,
 ) -> CandidateScore | None:
-    plain_input = split_keys(input_dict, Classification.PLAIN.value)
-    plain_candidate = split_keys(candidate_dict, Classification.PLAIN.value)
-    dunder_input = split_keys(input_dict, Classification.DUNDER.value)
-    dunder_candidate = split_keys(candidate_dict, Classification.DUNDER.value)
+    plain_input = split_identity_keys(input_dict)
+    plain_candidate = split_identity_keys(candidate_dict)
+    dunder_input = split_non_identity_dunder_keys(input_dict)
+    dunder_candidate = split_non_identity_dunder_keys(candidate_dict)
     delta = plain_delta_count(input_dict, candidate_dict)
     if delta > max_plain_delta:
         return None

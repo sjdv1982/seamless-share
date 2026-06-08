@@ -23,12 +23,32 @@ def test_plain_diff_identity_relevant():
     assert warnings == []
 
 
-def test_non_checksum_key_diff_warns_dunder_only():
+def test_load_bearing_dunder_diff_is_identity_relevant():
     entries, identity_relevant, warnings = transformation_diff_core(
         {"__language__": "python"},
         {"__language__": "bash"},
     )
-    assert entries[0].classification == "dunder"
+    assert entries[0].classification == "load_bearing_dunder"
+    assert identity_relevant is True
+    assert warnings == []
+
+
+def test_orthogonal_dunder_diff_warns_dunder_only():
+    entries, identity_relevant, warnings = transformation_diff_core(
+        {"__meta__": {"local": True}},
+        {"__meta__": {"local": False}},
+    )
+    assert entries[0].classification == "orthogonal_dunder"
+    assert identity_relevant is False
+    assert warnings == ["dunder_only_diff"]
+
+
+def test_derived_dunder_diff_warns_dunder_only():
+    entries, identity_relevant, warnings = transformation_diff_core(
+        {"__header__": "a" * 64},
+        {"__header__": "b" * 64},
+    )
+    assert entries[0].classification == "derived_dunder"
     assert identity_relevant is False
     assert warnings == ["dunder_only_diff"]
 

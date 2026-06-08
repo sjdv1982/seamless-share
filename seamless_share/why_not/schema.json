@@ -43,7 +43,14 @@
           ]
         },
         "key": {"type": "string"},
-        "classification": {"enum": ["plain", "dunder"]},
+        "classification": {
+          "enum": [
+            "plain",
+            "load_bearing_dunder",
+            "orthogonal_dunder",
+            "derived_dunder"
+          ]
+        },
         "value_A": {},
         "value_B": {},
         "value_input": {},
