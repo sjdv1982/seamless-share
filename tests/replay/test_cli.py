@@ -38,6 +38,7 @@ def test_replay_cli_noop_json_report(tmp_path):
         text=True,
         capture_output=True,
         check=False,
+        cwd=tmp_path,
     )
     assert proc.returncode == 0
     payload = json.loads(report.read_text(encoding="utf-8"))
@@ -69,6 +70,7 @@ def test_replay_cli_malformed_auth_is_setup_error(tmp_path):
         text=True,
         capture_output=True,
         check=False,
+        cwd=tmp_path,
     )
     assert proc.returncode == 3
     payload = json.loads(proc.stderr)

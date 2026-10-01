@@ -88,7 +88,7 @@ def test_why_not_selects_candidate_from_transformation_dict_buffer(tmp_path):
     assert result.diff["identity_relevant"] is True
 
 
-def test_cli_usage_error_for_checksum_without_endpoint():
+def test_cli_usage_error_for_checksum_without_endpoint(tmp_path):
     proc = subprocess.run(
         [
             sys.executable,
@@ -101,6 +101,7 @@ def test_cli_usage_error_for_checksum_without_endpoint():
         text=True,
         capture_output=True,
         check=False,
+        cwd=tmp_path,
     )
     assert proc.returncode == 2
     assert "checksum references require" in proc.stderr

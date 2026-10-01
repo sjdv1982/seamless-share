@@ -35,6 +35,7 @@ def test_api_cli_equivalence_modulo_timing(tmp_path):
         text=True,
         capture_output=True,
         check=False,
+        cwd=tmp_path,
     )
     assert proc.returncode == 0
     cli_payload = json.loads(proc.stdout)
