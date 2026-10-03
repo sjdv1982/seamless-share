@@ -8,31 +8,34 @@ from .models import EndpointLookupState, LookupState, LookupStateName
 
 
 def endpoint_lookup_state(endpoint: Any, tf_checksum: str) -> EndpointLookupState:
+    result_checksum = endpoint.get_transformation_result(tf_checksum)
     irreproducible = endpoint.get_irreproducible_records(tf_checksum)
-    if irreproducible:
+    if result_checksum is None and irreproducible:
         results = sorted({str(item.get("result")) for item in irreproducible if item.get("result")})
         return EndpointLookupState(
             endpoint=endpoint.spec.raw,
             state=LookupStateName.IRREPRODUCIBLE.value,
             details={"row_count": len(irreproducible), "result_checksums": results},
         )
-    result_checksum = endpoint.get_transformation_result(tf_checksum)
     if result_checksum is None:
         return EndpointLookupState(
             endpoint=endpoint.spec.raw,
             state=LookupStateName.NOT_PRESENT.value,
             details={},
         )
+    details = {"result_checksum": result_checksum}
+    if irreproducible:
+        details["row_count"] = len(irreproducible)
     if endpoint.buffer_available(result_checksum):
         return EndpointLookupState(
             endpoint=endpoint.spec.raw,
             state=LookupStateName.PRESENT_AS_HIT.value,
-            details={"result_checksum": result_checksum},
+            details=details,
         )
     return EndpointLookupState(
         endpoint=endpoint.spec.raw,
         state=LookupStateName.PRESENT_RESULT_UNAVAILABLE.value,
-        details={"result_checksum": result_checksum, "reason": "not_in_bufferdir"},
+        details={**details, "reason": "not_in_bufferdir"},
     )
 
 
