@@ -25,6 +25,7 @@ except Exception:  # pragma: no cover - optional workspace dependency
         "__meta__",
         "__env__",
         "__compilation__",
+        "__handler__",
         "__record_probe__",
         "__code_checksum__",
         "__code_text__",
